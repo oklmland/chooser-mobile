@@ -5,5 +5,5 @@ export const LOSER_MESSAGES: string[] = [
   "Descends gros lard avant que le livreur reparte avec ta commande et la donne au premier cafard",
   "Allez gros tocard fais pas le flemmard le livreur va finir par bouffer ton burger en te regardant par la vitre de sa clio 2 sans contrôle technique",
   "Ferme ton clapet clochard et va vite chercher les burger avant qu'il deviennent froids comme ton avenir",
-  "Descends chercher la bouffe sale kassos t'as tout le monde t'attend pose ton grand joint fumant qui fait des trous de zoul",
+  "Descends chercher la bouffe kassos tout le monde t'attend ça fait pose ton grand joint fumant qui fait des trous de zoul et bouge ton zouk",
 ];
