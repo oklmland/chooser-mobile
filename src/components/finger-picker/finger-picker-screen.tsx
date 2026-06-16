@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -8,7 +8,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { ThemedText } from '@/components/themed-text';
 import { LOSER_MESSAGES } from '@/constants/loser-messages';
 import { PLAYER_COLORS, colorForIndex } from '@/constants/palette';
 
@@ -155,7 +154,7 @@ export function FingerPickerScreen() {
       handleTouchesChanged(Object.keys(next).map(Number));
     });
 
-  const showInstructions = phase !== 'result' && activeIds.length < 2;
+  const showHint = phase === 'waiting' && activeIds.length === 0;
 
   const flashStyle = useAnimatedStyle(() => ({
     opacity: flashOpacity.value,
@@ -164,18 +163,14 @@ export function FingerPickerScreen() {
   return (
     <GestureDetector gesture={gesture}>
       <View style={styles.container}>
-        {showInstructions && (
-          <View style={styles.instructions} pointerEvents="none">
-            <ThemedText type="title" style={styles.instructionsTitle}>
-              Qui perd ?
-            </ThemedText>
-            <ThemedText style={styles.instructionsText}>
-              Chacun pose un doigt sur l&apos;écran.{'\n'}Au bout de 4 secondes, un(e) perdant(e)
-              est désigné(e).
-            </ThemedText>
-            <ThemedText type="small" style={styles.instructionsHint}>
-              Il faut au moins 2 doigts pour commencer.
-            </ThemedText>
+        {/* Gradient background: coral red at top → warm orange at bottom */}
+        <View style={styles.gradientTop} pointerEvents="none" />
+        <View style={styles.gradientBottom} pointerEvents="none" />
+
+        {/* Subtle hint when no fingers down */}
+        {showHint && (
+          <View style={styles.hintContainer} pointerEvents="none">
+            <Text style={styles.hintText}>Posez vos doigts</Text>
           </View>
         )}
 
@@ -208,8 +203,25 @@ export function FingerPickerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#15171C',
+    backgroundColor: '#FF3B5E',
     overflow: 'hidden',
+  },
+  // Two-layer gradient simulation: coral red at top, warm orange at bottom
+  gradientTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: '50%',
+    backgroundColor: '#FF3B5E',
+  },
+  gradientBottom: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FF8C00',
   },
   center: {
     position: 'absolute',
@@ -220,29 +232,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  instructions: {
+  hintContainer: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 24,
-    right: 24,
+    bottom: 60,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
   },
-  instructionsTitle: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  instructionsText: {
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
+  hintText: {
+    color: 'rgba(255,255,255,0.55)',
     fontSize: 16,
-    lineHeight: 24,
-  },
-  instructionsHint: {
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center',
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
   flashOverlay: {
     position: 'absolute',

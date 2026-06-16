@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, {
   SharedValue,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -10,9 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { LOSER_COLOR } from '@/constants/palette';
-
-export const CIRCLE_SIZE = 90;
+export const CIRCLE_SIZE = 130;
 
 export type FingerPhase = 'waiting' | 'countdown' | 'result';
 
@@ -24,10 +23,12 @@ type Props = {
   color: string;
 };
 
-export function TouchCircle({ touchId, positions, phase, isLoser, color }: Props) {
+export function TouchCircle({ touchId, positions, phase, isLoser }: Props) {
   const opacity = useSharedValue(1);
   const scale = useSharedValue(0.5);
   const pulseScale = useSharedValue(1);
+  // 0 = transparent (waiting), 1 = semi-white (countdown end), 2 = solid white (loser)
+  const fillProgress = useSharedValue(0);
 
   // Appear with a spring pop on mount
   useEffect(() => {
@@ -35,30 +36,32 @@ export function TouchCircle({ touchId, positions, phase, isLoser, color }: Props
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pulse animation while waiting
   useEffect(() => {
     if (phase === 'waiting') {
+      fillProgress.value = withTiming(0, { duration: 200 });
       pulseScale.value = withRepeat(
         withSequence(
-          withTiming(1.07, { duration: 700 }),
-          withTiming(1.0, { duration: 700 })
+          withTiming(1.05, { duration: 800 }),
+          withTiming(1.0, { duration: 800 })
         ),
         -1,
         false
       );
+    } else if (phase === 'countdown') {
+      pulseScale.value = withTiming(1, { duration: 200 });
+      // Animate fill over 4 seconds matching the countdown timer
+      fillProgress.value = withTiming(1, { duration: 4000 });
     } else {
       pulseScale.value = withTiming(1, { duration: 200 });
     }
-  }, [phase, pulseScale]);
+  }, [phase, pulseScale, fillProgress]);
 
   useEffect(() => {
     if (phase === 'result') {
       if (isLoser) {
-        // Explode outward then settle
-        scale.value = withSequence(
-          withSpring(2.2, { damping: 5, stiffness: 160 }),
-          withSpring(1.4, { damping: 12, stiffness: 180 })
-        );
+        // Scale up to 1.2x, fill becomes solid white
+        scale.value = withSpring(1.2, { damping: 10, stiffness: 180 });
+        fillProgress.value = withTiming(2, { duration: 200 });
       } else {
         opacity.value = withTiming(0, { duration: 350 });
       }
@@ -66,11 +69,25 @@ export function TouchCircle({ touchId, positions, phase, isLoser, color }: Props
       opacity.value = withTiming(1, { duration: 150 });
       scale.value = withSpring(1, { damping: 14, stiffness: 200 });
     }
-  }, [phase, isLoser, opacity, scale]);
+  }, [phase, isLoser, opacity, scale, fillProgress]);
 
   const style = useAnimatedStyle(() => {
     const pos = positions.value[touchId] ?? { x: -CIRCLE_SIZE, y: -CIRCLE_SIZE };
-    const activeColor = isLoser && phase === 'result' ? LOSER_COLOR : color;
+
+    // Build background color: transparent → rgba(255,255,255,0.25) → white
+    let bgColor: string;
+    if (fillProgress.value >= 2) {
+      bgColor = 'white';
+    } else if (fillProgress.value > 0) {
+      // alpha: 0 → 64 (hex) = 0 → ~25% opacity
+      const alphaInt = Math.round(interpolate(fillProgress.value, [0, 1], [0, 64]));
+      const hex = alphaInt.toString(16).padStart(2, '0');
+      bgColor = `#ffffff${hex}`;
+    } else {
+      bgColor = 'transparent';
+    }
+
+    const borderWidth = fillProgress.value >= 2 ? 0 : 9;
 
     return {
       transform: [
@@ -79,19 +96,8 @@ export function TouchCircle({ touchId, positions, phase, isLoser, color }: Props
         { scale: scale.value * pulseScale.value },
       ],
       opacity: opacity.value,
-      backgroundColor: activeColor,
-      // Neon glow via shadow on native, boxShadow on web
-      ...(Platform.OS === 'web'
-        ? ({
-            boxShadow: `0 0 18px 8px ${activeColor}99, 0 0 44px 16px ${activeColor}44`,
-          } as object)
-        : {
-            shadowColor: activeColor,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.9,
-            shadowRadius: 20,
-            elevation: 12,
-          }),
+      backgroundColor: bgColor,
+      borderWidth,
     };
   });
 
@@ -104,6 +110,8 @@ const styles = StyleSheet.create({
     width: CIRCLE_SIZE,
     height: CIRCLE_SIZE,
     borderRadius: CIRCLE_SIZE / 2,
-    opacity: 0.95,
+    borderColor: 'white',
+    borderWidth: 9,
+    backgroundColor: 'transparent',
   },
 });

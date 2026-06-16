@@ -70,29 +70,31 @@ export function CustomTabList(props: TabListProps) {
 const styles = StyleSheet.create({
   tabListContainer: {
     position: 'absolute',
+    bottom: 0,
     width: '100%',
-    padding: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingBottom: Spacing.two,
+    paddingTop: Spacing.one,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
   },
   innerContainer: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.one + 2,
+    paddingHorizontal: Spacing.four,
     borderRadius: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-    // Subtle shadow to lift it off the content
+    borderColor: 'rgba(255,255,255,0.1)',
     ...Platform.select({
       native: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
         elevation: 8,
@@ -112,10 +114,10 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
   },
   tabButtonViewFocused: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   tabButtonText: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.5)',
     fontWeight: '500',
   },
   tabButtonTextFocused: {

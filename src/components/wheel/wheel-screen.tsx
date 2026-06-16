@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
@@ -9,7 +9,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { WHEEL_COLORS, colorForIndex } from '@/constants/palette';
 import { Spacing } from '@/constants/theme';
 import { useWheelsStorage } from '@/hooks/use-wheels-storage';
@@ -46,15 +45,15 @@ function ResultBanner({
 
   return (
     <Animated.View style={[styles.resultBanner, { backgroundColor: bannerColor }, style]}>
-      <ThemedText style={styles.resultLabel}>Résultat</ThemedText>
-      <ThemedText style={styles.resultText} numberOfLines={2}>
+      <Text style={styles.resultLabel}>Résultat</Text>
+      <Text style={styles.resultText} numberOfLines={2}>
         {result.label}
-      </ThemedText>
+      </Text>
     </Animated.View>
   );
 }
 
-/** Spin button with press-scale animation */
+/** Large prominent TOURNER button */
 function SpinButton({
   onPress,
   disabled,
@@ -90,23 +89,19 @@ function SpinButton({
             ? ({
                 boxShadow: disabled
                   ? 'none'
-                  : '0 4px 24px rgba(60,135,247,0.45), 0 1px 4px rgba(0,0,0,0.2)',
+                  : '0 4px 28px rgba(255,255,255,0.25), 0 1px 4px rgba(0,0,0,0.3)',
               } as object)
             : (!disabled && {
-                shadowColor: '#3c87f7',
+                shadowColor: '#FFFFFF',
                 shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.5,
+                shadowOpacity: 0.2,
                 shadowRadius: 12,
                 elevation: 8,
               }),
         ]}>
-        {/* Gradient-like shimmer using nested view */}
-        {!disabled && (
-          <View style={styles.spinButtonHighlight} />
-        )}
-        <ThemedText style={styles.spinButtonText}>
-          {spinning ? 'Ça tourne...' : '🎡  Tourner la roue'}
-        </ThemedText>
+        <Text style={styles.spinButtonText}>
+          {spinning ? 'Ça tourne...' : 'TOURNER'}
+        </Text>
       </Animated.View>
     </Pressable>
   );
@@ -134,10 +129,11 @@ export function WheelScreen() {
   const [managerVisible, setManagerVisible] = useState(false);
 
   if (loading || !activeWheel) {
-    return <ThemedView style={styles.container} />;
+    return <View style={styles.container} />;
   }
 
-  const wheelSize = Math.min(width - Spacing.five * 2, 340);
+  // 85% of screen width, max 340px
+  const wheelSize = Math.min(Math.floor(width * 0.85), 340);
   const canSpin = activeWheel.options.length >= 2 && !spinning;
 
   const handleSpin = () => {
@@ -146,47 +142,83 @@ export function WheelScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        {/* Compact header row */}
         <View style={styles.header}>
           <Pressable onPress={() => setManagerVisible(true)} style={styles.headerButton}>
-            <ThemedText type="link">Mes roues</ThemedText>
+            <Text style={styles.headerButtonText}>Mes roues</Text>
           </Pressable>
-          <ThemedText type="subtitle" style={styles.title} numberOfLines={1}>
+          <Text style={styles.title} numberOfLines={1}>
             {activeWheel.name}
-          </ThemedText>
-          <Pressable onPress={() => setEditorVisible(true)} style={styles.headerButton}>
-            <ThemedText type="link">Modifier</ThemedText>
+          </Text>
+          <View style={styles.headerButton} />
+        </View>
+
+        {/* Wheel + result area (scrollable so it works on small screens) */}
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+          {/* Wheel */}
+          <View style={styles.wheelArea}>
+            <WheelCanvas
+              ref={wheelRef}
+              options={activeWheel.options}
+              size={wheelSize}
+              showResult={!!result}
+              onSpinStart={() => setSpinning(true)}
+              onSpinEnd={(option) => {
+                setSpinning(false);
+                const idx = activeWheel.options.findIndex((o) => o.id === option.id);
+                setResultIndex(idx >= 0 ? idx : 0);
+                setResult(option);
+              }}
+            />
+          </View>
+
+          {/* Result banner */}
+          {result && (
+            <View style={styles.resultArea}>
+              <ResultBanner result={result} optionIndex={resultIndex} />
+            </View>
+          )}
+
+          {/* Options list below the wheel */}
+          {activeWheel.options.length > 0 && (
+            <View style={styles.optionsList}>
+              {activeWheel.options.map((option, i) => (
+                <View key={option.id} style={styles.optionRow}>
+                  <View
+                    style={[
+                      styles.optionDot,
+                      { backgroundColor: colorForIndex(i, WHEEL_COLORS) },
+                    ]}
+                  />
+                  <Text style={styles.optionLabel} numberOfLines={1}>
+                    {option.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Bottom action bar */}
+        <View style={styles.bottomBar}>
+          <SpinButton onPress={handleSpin} disabled={!canSpin} spinning={spinning} />
+
+          {activeWheel.options.length < 2 && (
+            <Text style={styles.hint}>
+              Ajoutez au moins 2 options pour pouvoir tourner la roue.
+            </Text>
+          )}
+
+          {/* Prominent edit button */}
+          <Pressable onPress={() => setEditorVisible(true)} style={styles.editButton}>
+            <Text style={styles.editButtonText}>✏️  Modifier la roue</Text>
           </Pressable>
         </View>
-
-        <View style={styles.wheelArea}>
-          <WheelCanvas
-            ref={wheelRef}
-            options={activeWheel.options}
-            size={wheelSize}
-            showResult={!!result}
-            onSpinStart={() => setSpinning(true)}
-            onSpinEnd={(option) => {
-              setSpinning(false);
-              const idx = activeWheel.options.findIndex((o) => o.id === option.id);
-              setResultIndex(idx >= 0 ? idx : 0);
-              setResult(option);
-            }}
-          />
-        </View>
-
-        <View style={styles.resultArea}>
-          {result && <ResultBanner result={result} optionIndex={resultIndex} />}
-        </View>
-
-        <SpinButton onPress={handleSpin} disabled={!canSpin} spinning={spinning} />
-
-        {activeWheel.options.length < 2 && (
-          <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-            Ajoutez au moins 2 options pour pouvoir tourner la roue.
-          </ThemedText>
-        )}
       </SafeAreaView>
 
       <WheelEditor
@@ -206,45 +238,61 @@ export function WheelScreen() {
         onDelete={deleteWheel}
         onClose={() => setManagerVisible(false)}
       />
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0D0D1A',
   },
   safeArea: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     alignSelf: 'stretch',
-    paddingTop: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.two,
   },
   headerButton: {
-    minWidth: 70,
+    minWidth: 80,
+  },
+  headerButtonText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+    fontWeight: '500',
   },
   title: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 20,
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  scrollArea: {
+    flex: 1,
+    alignSelf: 'stretch',
+  },
+  scrollContent: {
+    alignItems: 'center',
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.three,
   },
   wheelArea: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: Spacing.two,
   },
   resultArea: {
-    minHeight: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
     alignSelf: 'stretch',
+    paddingHorizontal: Spacing.four,
+    marginTop: Spacing.two,
   },
   resultBanner: {
     alignSelf: 'stretch',
@@ -266,42 +314,71 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.25)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+  },
+  optionsList: {
+    alignSelf: 'stretch',
+    paddingHorizontal: Spacing.four,
+    marginTop: Spacing.three,
+    gap: Spacing.one + 2,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.one,
+  },
+  optionDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  optionLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 15,
+    fontWeight: '500',
+    flex: 1,
+  },
+  bottomBar: {
+    alignSelf: 'stretch',
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.three,
+    gap: Spacing.two,
   },
   spinButtonOuter: {
     alignSelf: 'stretch',
-    marginBottom: Spacing.three,
   },
   spinButton: {
-    backgroundColor: '#3c87f7',
+    backgroundColor: '#FFFFFF',
     borderRadius: Spacing.three,
-    paddingVertical: Spacing.three + 2,
+    paddingVertical: Spacing.three + 4,
     alignItems: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  spinButtonHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderTopLeftRadius: Spacing.three,
-    borderTopRightRadius: Spacing.three,
   },
   spinButtonDisabled: {
-    opacity: 0.45,
+    opacity: 0.3,
   },
   spinButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
+    color: '#0D0D1A',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 1.5,
   },
   hint: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 13,
     textAlign: 'center',
-    marginBottom: Spacing.three,
+  },
+  editButton: {
+    alignSelf: 'stretch',
+    borderRadius: Spacing.three,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  editButtonText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

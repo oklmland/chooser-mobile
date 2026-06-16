@@ -1,8 +1,6 @@
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, { SharedValue, useAnimatedProps } from 'react-native-reanimated';
 import { Circle, Svg } from 'react-native-svg';
-
-import { ThemedText } from '@/components/themed-text';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -12,8 +10,8 @@ type Props = {
   size?: number;
 };
 
-export function CountdownRing({ progress, secondsLeft, size = 170 }: Props) {
-  const strokeWidth = 13;
+export function CountdownRing({ progress, secondsLeft, size = 160 }: Props) {
+  const strokeWidth = 4;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
@@ -21,35 +19,24 @@ export function CountdownRing({ progress, secondsLeft, size = 170 }: Props) {
     strokeDashoffset: circumference * progress.value,
   }));
 
-  const isWeb = Platform.OS === 'web';
-
   return (
     <View style={[styles.container, { width: size, height: size }]} pointerEvents="none">
-      <Svg
-        width={size}
-        height={size}
-        style={
-          isWeb
-            ? ({
-                filter: 'drop-shadow(0 0 10px #ffffffaa) drop-shadow(0 0 24px #ffffff55)',
-              } as object)
-            : undefined
-        }>
-        {/* Track ring */}
+      <Svg width={size} height={size}>
+        {/* Very subtle track ring */}
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255,255,255,0.12)"
+          stroke="rgba(255,255,255,0.15)"
           strokeWidth={strokeWidth}
           fill="none"
         />
-        {/* Progress ring */}
+        {/* Thin progress ring */}
         <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#FFFFFF"
+          stroke="rgba(255,255,255,0.6)"
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={`${circumference} ${circumference}`}
@@ -61,7 +48,7 @@ export function CountdownRing({ progress, secondsLeft, size = 170 }: Props) {
         />
       </Svg>
       <View style={styles.label} pointerEvents="none">
-        <ThemedText style={styles.text}>{secondsLeft}</ThemedText>
+        <Text style={styles.text}>{secondsLeft}</Text>
       </View>
     </View>
   );
@@ -76,11 +63,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   text: {
-    fontSize: 68,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(255,255,255,0.55)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
+    fontSize: 56,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.85)',
   },
 });

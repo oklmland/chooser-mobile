@@ -184,38 +184,12 @@ export const WheelCanvas = forwardRef<WheelCanvasRef, Props>(function WheelCanva
 
   return (
     <View style={[styles.container, { width: size }]}>
-      {/* Glow shadow under the wheel */}
-      <View
-        style={[
-          styles.wheelGlow,
-          {
-            width: size * 0.8,
-            height: size * 0.15,
-            borderRadius: size * 0.4,
-          },
-          Platform.OS === 'web'
-            ? ({ boxShadow: '0 0 40px 20px rgba(100,180,255,0.2)' } as object)
-            : {
-                shadowColor: '#4A90D9',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.4,
-                shadowRadius: 20,
-                elevation: 8,
-              },
-        ]}
-      />
-      {/* Pointer with glow animation */}
+      {/* Pointer */}
       <Animated.View style={pointerStyle}>
         <View style={styles.pointer} />
       </Animated.View>
-      {/* 3D perspective tilt wrapper (web only) */}
-      <View
-        style={[
-          styles.perspectiveWrapper,
-          Platform.OS === 'web'
-            ? ({ perspective: 800, transform: [{ rotateX: '15deg' }] } as object)
-            : undefined,
-        ]}>
+      {/* Flat wheel — no 3D perspective */}
+      <View style={styles.wheelWrapper}>
         <Animated.View style={[{ width: size, height: size }, animatedStyle]}>
           <Svg width={size} height={size}>
             {options.length === 1 ? (
@@ -244,7 +218,7 @@ export const WheelCanvas = forwardRef<WheelCanvasRef, Props>(function WheelCanva
                     <Path
                       d={describeSlice(radius, radius, radius, start, end)}
                       fill={segColor}
-                      stroke="rgba(0,0,0,0.25)"
+                      stroke="rgba(0,0,0,0.2)"
                       strokeWidth={2}
                     />
                     <SvgText
@@ -288,12 +262,6 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
   },
-  wheelGlow: {
-    backgroundColor: 'transparent',
-    position: 'absolute',
-    bottom: -10,
-    alignSelf: 'center',
-  },
   pointer: {
     width: 0,
     height: 0,
@@ -306,7 +274,7 @@ const styles = StyleSheet.create({
     marginBottom: -10,
     zIndex: 2,
   },
-  perspectiveWrapper: {
+  wheelWrapper: {
     alignItems: 'center',
   },
   placeholder: {
