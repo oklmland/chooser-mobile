@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { SharedValue, useAnimatedProps } from 'react-native-reanimated';
 import { Circle, Svg } from 'react-native-svg';
 
@@ -12,8 +12,8 @@ type Props = {
   size?: number;
 };
 
-export function CountdownRing({ progress, secondsLeft, size = 140 }: Props) {
-  const strokeWidth = 10;
+export function CountdownRing({ progress, secondsLeft, size = 170 }: Props) {
+  const strokeWidth = 13;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
@@ -21,17 +21,30 @@ export function CountdownRing({ progress, secondsLeft, size = 140 }: Props) {
     strokeDashoffset: circumference * progress.value,
   }));
 
+  const isWeb = Platform.OS === 'web';
+
   return (
     <View style={[styles.container, { width: size, height: size }]} pointerEvents="none">
-      <Svg width={size} height={size}>
+      <Svg
+        width={size}
+        height={size}
+        style={
+          isWeb
+            ? ({
+                filter: 'drop-shadow(0 0 10px #ffffffaa) drop-shadow(0 0 24px #ffffff55)',
+              } as object)
+            : undefined
+        }>
+        {/* Track ring */}
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255,255,255,0.15)"
+          stroke="rgba(255,255,255,0.12)"
           strokeWidth={strokeWidth}
           fill="none"
         />
+        {/* Progress ring */}
         <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
@@ -63,8 +76,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   text: {
-    fontSize: 56,
-    fontWeight: '700',
+    fontSize: 68,
+    fontWeight: '800',
     color: '#FFFFFF',
+    textShadowColor: 'rgba(255,255,255,0.55)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 16,
   },
 });

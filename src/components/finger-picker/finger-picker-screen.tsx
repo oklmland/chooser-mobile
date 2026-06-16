@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { LOSER_MESSAGES } from '@/constants/loser-messages';
@@ -24,6 +29,9 @@ export function FingerPickerScreen() {
   const positions = useSharedValue<Record<number, { x: number; y: number }>>({});
   const progress = useSharedValue(0);
   const phaseSV = useSharedValue<FingerPhase>('waiting');
+
+  // Red flash overlay for loser reveal
+  const flashOpacity = useSharedValue(0);
 
   const activeIdsRef = useRef<number[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -61,7 +69,13 @@ export function FingerPickerScreen() {
     setLoserId(loser);
     setMessage(text);
     setPhase('result');
-  }, [clearTimers, progress]);
+
+    // Trigger red flash overlay
+    flashOpacity.value = withSequence(
+      withTiming(0.45, { duration: 120 }),
+      withTiming(0, { duration: 500 })
+    );
+  }, [clearTimers, progress, flashOpacity]);
 
   const startCountdown = useCallback(() => {
     setPhase('countdown');
@@ -143,6 +157,10 @@ export function FingerPickerScreen() {
 
   const showInstructions = phase !== 'result' && activeIds.length < 2;
 
+  const flashStyle = useAnimatedStyle(() => ({
+    opacity: flashOpacity.value,
+  }));
+
   return (
     <GestureDetector gesture={gesture}>
       <View style={styles.container}>
@@ -179,6 +197,9 @@ export function FingerPickerScreen() {
             color={colorForIndex(id, PLAYER_COLORS)}
           />
         ))}
+
+        {/* Red flash overlay on loser reveal */}
+        <Animated.View style={[styles.flashOverlay, flashStyle]} pointerEvents="none" />
       </View>
     </GestureDetector>
   );
@@ -222,5 +243,13 @@ const styles = StyleSheet.create({
   instructionsHint: {
     color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
+  },
+  flashOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FF3B30',
   },
 });
