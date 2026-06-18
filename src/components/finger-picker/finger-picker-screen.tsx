@@ -35,6 +35,7 @@ export function FingerPickerScreen() {
   const activeIdsRef = useRef<number[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const messageQueueRef = useRef<string[]>([]);
 
   useEffect(() => {
     activeIdsRef.current = activeIds;
@@ -64,7 +65,11 @@ export function FingerPickerScreen() {
       return;
     }
     const loser = current[Math.floor(Math.random() * current.length)];
-    const text = LOSER_MESSAGES[Math.floor(Math.random() * LOSER_MESSAGES.length)];
+    if (messageQueueRef.current.length === 0) {
+      const shuffled = [...LOSER_MESSAGES].sort(() => Math.random() - 0.5);
+      messageQueueRef.current = shuffled;
+    }
+    const text = messageQueueRef.current.pop()!;
     setLoserId(loser);
     setMessage(text);
     setPhase('result');
